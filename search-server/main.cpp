@@ -105,12 +105,6 @@ public:
             throw invalid_argument("id is less than zero or is already used");
         }
         const vector<string> words = SplitIntoWordsNoStop(document);
-        for (const string& word : words) {
-            if(!IsValidWord(word)) {
-                throw invalid_argument("Specsymbols in text not allowed");
-            }
-            continue;
-        }
         const double inv_word_count = 1.0 / words.size();
         for (const string& word : words) {
             word_to_document_freqs_[word][document_id] += inv_word_count;
@@ -196,9 +190,19 @@ private:
         return stop_words_.count(word) > 0;
     }
 
+    static bool IsValidWord(const string& word) {
+        // A valid word must not contain special characters
+        return none_of(word.begin(), word.end(), [](char c) {
+            return c >= '\0' && c < ' ';
+        });
+    }
+
     vector<string> SplitIntoWordsNoStop(const string& text) const {
         vector<string> words;
         for (const string& word : SplitIntoWords(text)) {
+            if(!IsValidWord(word)) {
+                throw invalid_argument("Specsymbols in text not allowed");
+            }
             if (!IsStopWord(word)) {
                 words.push_back(word);
             }
@@ -219,13 +223,6 @@ private:
         bool is_minus;
         bool is_stop;
     };
-
-    static bool IsValidWord(const string& word) {
-        // A valid word must not contain special characters
-        return none_of(word.begin(), word.end(), [](char c) {
-            return c >= '\0' && c < ' ';
-        });
-    }
 
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
